@@ -1,10 +1,28 @@
 name: Build Releases
-on: workflow_call
+on:
+  workflow_call:
+    inputs:
+      version:
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  VERSION: ${{ inputs.version }}
 
 jobs:
   build_macos:
-    name: Build for MacOS
-    runs-on: macos-latest
+    name: Build for macOS (${{ matrix.arch }})
+    strategy:
+      matrix:
+        include:
+          - arch: amd64
+            runner: macos-15-intel
+          - arch: arm64
+            runner: macos-15
+    runs-on: ${{ matrix.runner }}
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -14,32 +32,22 @@ jobs:
         go-version-file: 'go.mod'
     - name: Setup Node
       uses: actions/setup-node@v6
+      with:
+        node-version: 24
     - name: Install dependencies
       run: npm ci
-    - name: Build arm64 gui
+    - name: Build GUI
       uses: ./.github/actions/prepare
       with:
-        id: darwin_arm64_gui
-        cmd: make darwin_arm64_gui
-        out: out/darwin_arm64_gui/yarr.app
-    - name: Build amd64 gui
+        id: darwin_${{ matrix.arch }}_gui
+        cmd: make darwin_${{ matrix.arch }}_gui
+        out: out/darwin_${{ matrix.arch }}_gui/yarr.app
+    - name: Build CLI
       uses: ./.github/actions/prepare
       with:
-        id: darwin_amd64_gui
-        cmd: make darwin_amd64_gui
-        out: out/darwin_amd64_gui/yarr.app
-    - name: Build arm64 cli
-      uses: ./.github/actions/prepare
-      with:
-        id: darwin_arm64
-        cmd: make darwin_arm64
-        out: out/darwin_arm64/yarr
-    - name: Build amd64 cli
-      uses: ./.github/actions/prepare
-      with:
-        id: darwin_amd64
-        cmd: make darwin_amd64
-        out: out/darwin_amd64/yarr
+        id: darwin_${{ matrix.arch }}
+        cmd: make darwin_${{ matrix.arch }}
+        out: out/darwin_${{ matrix.arch }}/yarr
 
   build_windows:
     name: Build for Windows
@@ -53,21 +61,16 @@ jobs:
         go-version-file: 'go.mod'
     - name: Setup Node
       uses: actions/setup-node@v6
+      with:
+        node-version: 24
     - name: Install dependencies
       run: npm ci
     - name: Build amd64 gui
       uses: ./.github/actions/prepare
       with:
         id: windows_amd64_gui
-        cmd: make windows_amd64_gui
+        cmd: make SHELL=bash windows_amd64_gui
         out: out/windows_amd64_gui/yarr.exe
-    - name: Build arm64 gui
-      if: false
-      uses: ./.github/actions/prepare
-      with:
-        id: windows_arm64_gui
-        cmd: make windows_arm64_gui
-        out: out/windows_arm64_gui/yarr.exe
 
   build_multi_cli:
     name: Build for Windows/Linux (CLI)
@@ -81,6 +84,8 @@ jobs:
         go-version-file: 'go.mod'
     - name: Setup Node
       uses: actions/setup-node@v6
+      with:
+        node-version: 24
     - name: Install dependencies
       run: npm ci
     - name: Setup Zig
@@ -122,29 +127,31 @@ jobs:
     name: Create Release
     runs-on: ubuntu-latest
     needs: [build_macos, build_windows, build_multi_cli]
+    permissions:
+      contents: write
     steps:
-    - name: Download Artifacts
-      uses: actions/download-artifact@v4.1.7
+    - name: Download binary artifacts
+      uses: actions/download-artifact@v4
       with:
-        path: .
-    - name: Preparation
+        pattern: '{darwin,linux,windows}_*'
+        path: artifacts
+    - name: Package release archives
       run: |
-        set -ex
-        ls -R
-        for tarfile in `ls **/*.tar`; do
-          tar -xvf $tarfile
+        mkdir dist
+        for archive in artifacts/*/*.tar; do
+          tar -xf "$archive"
         done
         for dir in out/*; do
-          echo "Compressing: $dir"
-          (test -d "$dir" && cd $dir && zip -r ../yarr_`basename $dir`.zip *)
+          (cd "$dir" && zip -qr "../../dist/yarr-sift_${dir##*/}.zip" .)
         done
-        ls out
-    - name: Upload Release
+    - name: Publish Release
       uses: softprops/action-gh-release@v2
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-          draft: true
-          prerelease: true
-          files: |
-            out/*.zip
+        name: Yarr Sift ${{ inputs.version }}
+        tag_name: ${{ inputs.version }}
+        target_commitish: ${{ github.sha }}
+        draft: false
+        prerelease: ${{ contains(inputs.version, '-') }}
+        generate_release_notes: true
+        fail_on_unmatched_files: true
+        files: dist/*.zip

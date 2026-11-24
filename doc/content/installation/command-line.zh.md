@@ -6,17 +6,17 @@ weight: 2
 
 ## 下载
 
-从[发布页面](https://github.com/nkanaev/yarr/releases/latest)下载命令行版本。文件名不包含 `_gui`。
+从[发布页面](https://github.com/dismay712/yarr-sift/releases/latest)下载命令行版本。文件名不包含 `_gui`。
 
 | 操作系统 | 架构 | 下载 |
 |---|---|---|
-| macOS | Apple Silicon | [yarr_darwin_arm64.zip](https://github.com/nkanaev/yarr/releases/latest/download/yarr_darwin_arm64.zip) |
-| macOS | Intel | [yarr_darwin_amd64.zip](https://github.com/nkanaev/yarr/releases/latest/download/yarr_darwin_amd64.zip) |
-| Windows | ARM64 | [yarr_windows_arm64.zip](https://github.com/nkanaev/yarr/releases/latest/download/yarr_windows_arm64.zip) |
-| Windows | x86-64 | [yarr_windows_amd64.zip](https://github.com/nkanaev/yarr/releases/latest/download/yarr_windows_amd64.zip) |
-| Linux | ARM64 | [yarr_linux_arm64.zip](https://github.com/nkanaev/yarr/releases/latest/download/yarr_linux_arm64.zip) |
-| Linux | ARMv7 | [yarr_linux_armv7.zip](https://github.com/nkanaev/yarr/releases/latest/download/yarr_linux_armv7.zip) |
-| Linux | x86-64 | [yarr_linux_amd64.zip](https://github.com/nkanaev/yarr/releases/latest/download/yarr_linux_amd64.zip) |
+| macOS | Apple Silicon | [yarr-sift_darwin_arm64.zip](https://github.com/dismay712/yarr-sift/releases/latest/download/yarr-sift_darwin_arm64.zip) |
+| macOS | Intel | [yarr-sift_darwin_amd64.zip](https://github.com/dismay712/yarr-sift/releases/latest/download/yarr-sift_darwin_amd64.zip) |
+| Windows | ARM64 | [yarr-sift_windows_arm64.zip](https://github.com/dismay712/yarr-sift/releases/latest/download/yarr-sift_windows_arm64.zip) |
+| Windows | x86-64 | [yarr-sift_windows_amd64.zip](https://github.com/dismay712/yarr-sift/releases/latest/download/yarr-sift_windows_amd64.zip) |
+| Linux | ARM64 | [yarr-sift_linux_arm64.zip](https://github.com/dismay712/yarr-sift/releases/latest/download/yarr-sift_linux_arm64.zip) |
+| Linux | ARMv7 | [yarr-sift_linux_armv7.zip](https://github.com/dismay712/yarr-sift/releases/latest/download/yarr-sift_linux_armv7.zip) |
+| Linux | x86-64 | [yarr-sift_linux_amd64.zip](https://github.com/dismay712/yarr-sift/releases/latest/download/yarr-sift_linux_amd64.zip) |
 
 ## 运行
 

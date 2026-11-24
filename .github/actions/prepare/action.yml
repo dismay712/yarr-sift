@@ -1,4 +1,5 @@
 name: Build & Upload
+description: Build a binary and archive it for the release packaging job
 inputs:
   id:
     description: artifact name
@@ -23,3 +24,5 @@ runs:
       with:
         name: ${{ inputs.id }}
         path: ${{ inputs.out }}.tar
+        if-no-files-found: error
+        overwrite: true

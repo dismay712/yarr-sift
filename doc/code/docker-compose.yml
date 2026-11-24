@@ -1,6 +1,6 @@
 services:
   yarr:
-    image: nkanaev/yarr:latest
+    image: ghcr.io/dismay712/yarr-sift:latest
     command: ["-addr", "0.0.0.0:7070"]
     environment:
       YARR_DB: postgres://dbuser:dbpass@postgres:5432/dbname?sslmode=disable

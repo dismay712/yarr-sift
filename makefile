@@ -1,4 +1,4 @@
-VERSION=$(shell git describe --exact-match --tags HEAD 2>/dev/null || echo bleeding)
+VERSION ?= $(shell git describe --exact-match --tags HEAD 2>/dev/null || echo bleeding)
 GITHASH=$(shell git rev-parse --short=8 HEAD)
 
 GO_TAGS    = sqlite_foreign_keys sqlite_json sqlite_fts5
@@ -40,7 +40,7 @@ host: assets
 
 darwin_amd64: assets
 	# cross-compilation not supported: CC="zig cc -target x86_64-macos-none"
-	GOOS=darwin GOARCH=arm64 go build $(GO_FLAGS) -o out/$@/yarr ./cmd/yarr
+	GOOS=darwin GOARCH=amd64 go build $(GO_FLAGS) -o out/$@/yarr ./cmd/yarr
 
 darwin_arm64: assets
 	# cross-compilation not supported: CC="zig cc -target aarch64-macos-none"

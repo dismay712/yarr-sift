@@ -51,16 +51,17 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Strip leading 'v' and replace dots with commas for version_comma
-version_num="${version#[!0-9.]*}"
+# Windows stores the numeric version as four integers.
+version_num="${version#v}"
 version_num="${version_num%%[!0-9.]*}"
-version_comma="${version_num//./,}"
+IFS=. read -r major minor patch revision <<< "$version_num"
+version_comma="${major:-0},${minor:-0},${patch:-0},${revision:-0}"
 
 # Use a here document for the template with ENDFILE delimiter
 cat <<ENDFILE > "$outfile"
 1 VERSIONINFO
-FILEVERSION     $version_comma,0,0
-PRODUCTVERSION  $version_comma,0,0
+FILEVERSION     $version_comma
+PRODUCTVERSION  $version_comma
 BEGIN
   BLOCK "StringFileInfo"
   BEGIN

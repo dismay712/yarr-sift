@@ -3,18 +3,65 @@ on:
   push:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   test:
     uses: ./.github/workflows/test.yml
 
+  version:
+    name: Determine release version
+    if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: version
+        name: Resolve and check the tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF_TYPE" == tag ]]; then
+            tag=$GITHUB_REF_NAME
+          else
+            tag=$(cat VERSION)
+          fi
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+(\.[0-9]+)?(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$ ]]; then
+            echo "::error::Expected a release version such as v0.1.0 or v0.2.0-rc.1"
+            exit 1
+          fi
+          if git show-ref --verify --quiet "refs/tags/$tag" &&
+             [[ "$(git rev-parse "refs/tags/$tag^{commit}")" != "$(git rev-parse HEAD)" ]]; then
+            # An ordinary master build keeps the development image up to date.
+            if [[ "$GITHUB_REF_TYPE" == branch ]]; then exit 0; fi
+            echo "::error::The tag $tag already points to a different commit"
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
   build-docker:
-    needs: test
-    if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/master'
+    needs: [test, version]
+    permissions:
+      contents: read
+      packages: write
     uses: ./.github/workflows/build-docker.yml
-    secrets: inherit
+    with:
+      version: ${{ needs.version.outputs.tag }}
 
   build-releases:
-    needs: test
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [test, version]
+    if: needs.version.outputs.tag != ''
+    permissions:
+      contents: write
     uses: ./.github/workflows/build-releases.yml
-    secrets: inherit
+    with:
+      version: ${{ needs.version.outputs.tag }}

@@ -4,7 +4,7 @@ description: Run yarr in a Docker container with a persistent volume.
 weight: 3
 ---
 
-The image is available on [Docker Hub](https://hub.docker.com/r/nkanaev/yarr) and [GitHub Container Registry](https://github.com/nkanaev/yarr/pkgs/container/yarr).
+The [Yarr Sift image on GitHub Container Registry](https://github.com/dismay712/yarr-sift/pkgs/container/yarr-sift) supports Linux amd64 and arm64. Use `latest` for the latest stable release or a version tag such as `v0.1.0` to pin your deployment.
 
 Pull the image from the registry:
 

@@ -4,7 +4,7 @@ description: 使用持久卷在 Docker 容器中运行 yarr。
 weight: 3
 ---
 
-该镜像可从 [Docker Hub](https://hub.docker.com/r/nkanaev/yarr) 和 [GitHub Container Registry](https://github.com/nkanaev/yarr/pkgs/container/yarr) 获取。
+[GitHub Container Registry 上的 Yarr Sift 镜像](https://github.com/dismay712/yarr-sift/pkgs/container/yarr-sift)支持 Linux amd64 和 arm64。使用 `latest` 获取最新稳定版，也可以用 `v0.1.0` 等版本标签固定部署版本。
 
 从镜像仓库拉取镜像：
 

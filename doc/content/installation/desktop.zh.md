@@ -6,14 +6,13 @@ weight: 1
 
 ## 下载
 
-从[发布页面](https://github.com/nkanaev/yarr/releases/latest)下载桌面应用程序。选择适合您操作系统和 CPU 架构的文件。
+从[发布页面](https://github.com/dismay712/yarr-sift/releases/latest)下载桌面应用程序。选择适合您操作系统和 CPU 架构的文件。
 
 | 操作系统 | 架构 | 下载 |
 |---|---|---|
-| macOS | Apple Silicon | [yarr_darwin_arm64_gui.zip](https://github.com/nkanaev/yarr/releases/latest/download/yarr_darwin_arm64_gui.zip) |
-| macOS | Intel | [yarr_darwin_amd64_gui.zip](https://github.com/nkanaev/yarr/releases/latest/download/yarr_darwin_amd64_gui.zip) |
-| Windows | ARM64 | [yarr_windows_arm64_gui.zip](https://github.com/nkanaev/yarr/releases/latest/download/yarr_windows_arm64_gui.zip) |
-| Windows | x86-64 | [yarr_windows_amd64_gui.zip](https://github.com/nkanaev/yarr/releases/latest/download/yarr_windows_amd64_gui.zip) |
+| macOS | Apple Silicon | [yarr-sift_darwin_arm64_gui.zip](https://github.com/dismay712/yarr-sift/releases/latest/download/yarr-sift_darwin_arm64_gui.zip) |
+| macOS | Intel | [yarr-sift_darwin_amd64_gui.zip](https://github.com/dismay712/yarr-sift/releases/latest/download/yarr-sift_darwin_amd64_gui.zip) |
+| Windows | x86-64 | [yarr-sift_windows_amd64_gui.zip](https://github.com/dismay712/yarr-sift/releases/latest/download/yarr-sift_windows_amd64_gui.zip) |
 
 ## macOS
 

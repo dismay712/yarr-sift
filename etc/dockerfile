@@ -4,9 +4,11 @@ WORKDIR /src
 COPY . .
 RUN --mount=type=cache,target=/root/.npm \
     npm ci
+ARG VERSION
+ARG GITHASH
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/root/go/pkg \
-  make host
+  make host ${VERSION:+"VERSION=$VERSION"} ${GITHASH:+"GITHASH=$GITHASH"}
 
 FROM alpine:latest
 RUN apk add --no-cache ca-certificates && update-ca-certificates
