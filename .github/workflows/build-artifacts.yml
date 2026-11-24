@@ -1,0 +1,88 @@
+name: Build binaries and Docker images
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [build/artifacts]
+
+permissions:
+  contents: read
+
+jobs:
+  binary:
+    name: Binary (${{ matrix.platform }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-amd64
+            runner: ubuntu-24.04
+          - platform: linux-arm64
+            runner: ubuntu-24.04-arm
+          - platform: windows-amd64
+            runner: windows-2025
+          - platform: macos-amd64
+            runner: macos-15-intel
+          - platform: macos-arm64
+            runner: macos-15
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - run: npm ci
+      - run: make SHELL=bash host
+      - name: Smoke-test and package binary
+        run: |
+          name="yarr-sift$(go env GOEXE)"
+          mv out/yarr "out/$name"
+          "./out/$name" -version
+          mkdir dist
+          if [[ "$RUNNER_OS" == Windows ]]; then
+            mv "out/$name" dist/
+          else
+            tar -C out -cf "dist/yarr-sift-${{ matrix.platform }}.tar" "$name"
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: yarr-sift-${{ matrix.platform }}
+          path: dist/
+          if-no-files-found: error
+
+  image:
+    name: Docker (linux/${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    env:
+      IMAGE: yarr-sift:${{ github.sha }}-${{ matrix.arch }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Build and smoke-test image
+        run: |
+          docker buildx build --load --platform linux/${{ matrix.arch }} -f etc/dockerfile -t "$IMAGE" .
+          docker run --rm --network none "$IMAGE" -version
+      - name: Export image for docker load
+        run: docker save -o yarr-sift-linux-${{ matrix.arch }}.tar "$IMAGE"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: yarr-sift-docker-linux-${{ matrix.arch }}
+          path: yarr-sift-linux-${{ matrix.arch }}.tar
+          if-no-files-found: error
