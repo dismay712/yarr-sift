@@ -3,6 +3,9 @@
 fyne.io/systray
 fyne.io/systray/internal/generated/menu
 fyne.io/systray/internal/generated/notifier
+# github.com/andybalholm/cascadia v1.3.5
+## explicit; go 1.25.0
+github.com/andybalholm/cascadia
 # github.com/expr-lang/expr v1.17.8
 ## explicit; go 1.18
 github.com/expr-lang/expr

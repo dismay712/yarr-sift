@@ -7,6 +7,7 @@ interface DropdownFeedProps {
   feed: Feed;
   folders: Folder[];
   onRename: (feed: Feed) => void;
+  onEditRule: (feed: Feed) => void;
   onUpdateLink: (feed: Feed) => void;
   onMove: (feed: Feed, folderId: number | null) => void;
   onMoveToNewFolder: (feed: Feed) => void;
@@ -17,6 +18,7 @@ export default function DropdownFeed({
   feed,
   folders,
   onRename,
+  onEditRule,
   onUpdateLink,
   onMove,
   onMoveToNewFolder,
@@ -73,6 +75,13 @@ export default function DropdownFeed({
           {t("change_link")}
         </button>
       )}
+      <button
+        type="button"
+        className="c-dropdown-item w-100 text-start d-flex gap-1"
+        onClick={() => onEditRule(feed)}>
+        <Icon className="me-1" name="sliders" />
+        {t("article_extraction")}
+      </button>
       <div className="c-dropdown-divider" />
       <div className="c-dropdown-header" role="heading" aria-level={2}>
         {t("move_to")}

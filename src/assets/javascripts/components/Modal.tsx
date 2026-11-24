@@ -3,11 +3,12 @@ import type { ComponentChildren } from "preact";
 
 interface ModalProps {
   open: boolean;
+  label: string;
   onHide: () => void;
   children: ComponentChildren;
 }
 
-export default function Modal({ open, onHide, children }: ModalProps) {
+export default function Modal({ open, label, onHide, children }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -27,7 +28,12 @@ export default function Modal({ open, onHide, children }: ModalProps) {
   };
 
   return (
-    <dialog className="c-dialog" ref={dialogRef} onClose={onHide} onClick={onBackdropClick}>
+    <dialog
+      className="c-dialog"
+      aria-label={label}
+      ref={dialogRef}
+      onClose={onHide}
+      onClick={onBackdropClick}>
       {children}
     </dialog>
   );

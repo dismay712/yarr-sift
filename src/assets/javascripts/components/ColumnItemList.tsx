@@ -22,6 +22,7 @@ interface ColumnItemListProps {
   itemList: AppItemList;
   itemSelected: Signal<number | null>;
   onMarkAllRead: () => void;
+  onEditRule: (feed: Feed) => void;
 }
 
 export default function ColumnItemList({
@@ -30,6 +31,7 @@ export default function ColumnItemList({
   itemList,
   itemSelected,
   onMarkAllRead,
+  onEditRule,
 }: ColumnItemListProps) {
   const { t } = useI18n();
 
@@ -252,6 +254,7 @@ export default function ColumnItemList({
             folders={registry.folders.value}
             onRename={renameFeed}
             onUpdateLink={updateFeedLink}
+            onEditRule={onEditRule}
             onMove={moveFeed}
             onMoveToNewFolder={moveFeedToNewFolder}
             onDelete={deleteFeed}

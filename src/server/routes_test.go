@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -227,6 +228,45 @@ func TestFeedCreateError(t *testing.T) {
 
 	if recorder.Result().StatusCode != http.StatusInternalServerError {
 		t.Fatalf("expected 500, got %d", recorder.Result().StatusCode)
+	}
+}
+
+func TestFeedExtractionRule(t *testing.T) {
+	server := testServer()
+	db := server.Storage.(*localStorage).storage
+	defer db.Close()
+	feed := db.CreateFeed(model.CreateFeedParams{Title: "News", FeedLink: "https://example.org/feed"})
+	handler := server.Handler()
+	update := func(body string, status int) {
+		t.Helper()
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest("PUT", fmt.Sprintf("/api/feeds/%d", feed.Id), strings.NewReader(body))
+		handler.ServeHTTP(rec, req)
+		if rec.Code != status {
+			t.Fatalf("%s returned %d: %s", body, rec.Code, rec.Body.String())
+		}
+	}
+	update(`{"content_selector":"  article ","exclude_selector":"aside, .promo"}`, http.StatusOK)
+	update(`{"title":"New title"}`, http.StatusOK)
+	for _, body := range []string{
+		`{"title":"invalid","content_selector":"["}`,
+		`{"exclude_selector":"["}`,
+		`{"content_selector":42}`,
+	} {
+		update(body, http.StatusBadRequest)
+	}
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest("GET", "/api/feeds", nil))
+	var feeds []model.Feed
+	if err := json.Unmarshal(rec.Body.Bytes(), &feeds); err != nil {
+		t.Fatal(err)
+	}
+	if len(feeds) != 1 || feeds[0].Title != "New title" || feeds[0].ContentSelector != "article" || feeds[0].ExcludeSelector != "aside, .promo" {
+		t.Fatalf("unexpected feed settings: %+v", feeds)
+	}
+	update(`{"content_selector":""}`, http.StatusOK)
+	if saved := db.GetFeed(feed.Id); saved.ContentSelector != "" || saved.ExcludeSelector != "" {
+		t.Fatalf("clearing the selector left an active rule: %+v", saved)
 	}
 }
 

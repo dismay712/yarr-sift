@@ -23,6 +23,7 @@ var migrations = []func(*sql.Tx) error{
 	m13_consolidate_feed_states,
 	m14_upgrade_fts5,
 	m15_update_item_update_trigger,
+	m16_article_extraction,
 }
 
 var maxVersion = int64(len(migrations))
@@ -428,6 +429,26 @@ func m15_update_item_update_trigger(tx *sql.Tx) error {
 		create trigger items_au after update of title, content on items begin
 		  insert into search(search, rowid, title, content) values('delete', old.id, old.title, strip_html(old.content));
 		  insert into search(rowid, title, content) values (new.id, new.title, strip_html(new.content));
+		end;
+	`)
+	return err
+}
+
+func m16_article_extraction(tx *sql.Tx) error {
+	_, err := tx.Exec(`
+		alter table feeds add column content_selector text not null default '';
+		alter table feeds add column exclude_selector text not null default '';
+		alter table feeds add column extraction_revision bigint not null default 1;
+		alter table items add column rss_content text;
+		alter table items add column extraction_revision bigint not null default 0;
+		alter table items add column extraction_attempt bigint not null default 0;
+		create index idx_item_extraction_queue on items(feed_id, extraction_revision)
+			where link != '';
+
+		create trigger restore_rss_content after update of content_selector, exclude_selector on feeds
+		when old.extraction_revision != new.extraction_revision begin
+			update items set content = rss_content, rss_content = null
+			where feed_id = new.id and rss_content is not null;
 		end;
 	`)
 	return err

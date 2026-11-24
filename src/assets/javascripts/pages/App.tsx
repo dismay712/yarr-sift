@@ -4,6 +4,7 @@ import { useI18n } from "../i18n";
 import type { TranslationKey } from "../i18n";
 import api from "../api";
 import { to } from "../utils";
+import ArticleRuleForm from "../components/ArticleRuleForm";
 import Modal from "../components/Modal";
 import Shortcuts from "../components/Shortcuts";
 import Icon from "../components/Icon";
@@ -18,7 +19,7 @@ import { SettingsModel } from "../models/settings";
 import type { Theme } from "../models/settings";
 import { RegistryModel } from "../models/registry";
 import { ItemListModel } from "../models/itemlist";
-import type { Item, ItemStatus } from "../api-types";
+import type { Feed, Item, ItemStatus } from "../api-types";
 
 const THEME_COLORS: Record<string, string> = {
   night: "#0e0e0e",
@@ -29,7 +30,7 @@ const THEME_COLORS: Record<string, string> = {
 const TITLE = document.title;
 
 export default function App() {
-  const { setLang } = useI18n();
+  const { setLang, t } = useI18n();
   const appSettings = window.app?.settings || {};
 
   // Items
@@ -37,7 +38,7 @@ export default function App() {
   const itemSelectedDetails = useSignal<Item | null>(null);
 
   // Status & modal
-  const showModal = useSignal<"" | "shortcuts">("");
+  const showModal = useSignal<"" | "shortcuts" | { feed: Feed }>("");
 
   // Element refs
   const feedListRef = useRef<ColumnFeedListHandle>(null);
@@ -198,6 +199,8 @@ export default function App() {
 
   useEffect(() => setupKeybindings(keyActionsRef), []);
 
+  const modal = showModal.value;
+  const closeModal = () => (showModal.value = "");
   const items = itemList.items.value;
   const canPrev = Boolean(items.length && itemSelected.value !== items[0].id);
   const canNext = Boolean(items.length && itemSelected.value !== items[items.length - 1].id);
@@ -221,6 +224,7 @@ export default function App() {
         itemList={itemList}
         itemSelected={itemSelected}
         onMarkAllRead={markItemsRead}
+        onEditRule={feed => (showModal.value = { feed })}
       />
       <ColumnItemView
         item={itemSelectedDetails.value}
@@ -234,15 +238,34 @@ export default function App() {
         canNext={canNext}
         onClose={() => (itemSelected.value = null)}
       />
-      <Modal open={showModal.value !== ""} onHide={() => (showModal.value = "")}>
-        <button
-          type="button"
-          className="c-button-link outline-none position-absolute top-0 end-0 p-2 m-2"
-          style={{ lineHeight: 1 }}
-          onClick={() => (showModal.value = "")}>
-          <Icon name="x" />
-        </button>
-        {showModal.value === "shortcuts" && <Shortcuts />}
+      <Modal
+        open={modal !== ""}
+        label={t(modal === "shortcuts" ? "keyboard_shortcuts" : "article_extraction")}
+        onHide={closeModal}>
+        {modal === "shortcuts" && (
+          <>
+            <button
+              type="button"
+              className="c-button-link outline-none position-absolute top-0 end-0 p-2 m-2"
+              style={{ lineHeight: 1 }}
+              onClick={closeModal}>
+              <Icon name="x" />
+            </button>
+            <Shortcuts />
+          </>
+        )}
+        {typeof modal === "object" && (
+          <ArticleRuleForm
+            feed={modal.feed}
+            onCancel={closeModal}
+            onSaved={rule => {
+              registry.feeds.value = registry.feeds.value.map(feed =>
+                feed.id === modal.feed.id ? { ...feed, ...rule } : feed,
+              );
+              if (showModal.value === modal) closeModal();
+            }}
+          />
+        )}
       </Modal>
       <ToastContainer />
     </div>

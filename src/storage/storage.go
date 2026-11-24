@@ -25,8 +25,10 @@ type Storage interface {
 	ListFeedStates() ([]model.FeedState, error)
 	ListFeeds() []model.Feed
 	ListFolders() []model.Folder
+	ListPendingExtractions(feed model.Feed, limit int) ([]model.Item, error)
 	ListItems(filter model.ItemFilter, limit int, newestFirst bool, withContent bool) []model.Item
 	MarkItemsRead(filter model.MarkFilter) bool
+	RecordExtraction(feed model.Feed, itemID int64, content *string) error
 	UpdateFeed(feedId int64, params model.UpdateFeedParams) (bool, error)
 	UpdateFeedState(feedID int64, params model.UpdateFeedStateParams) (bool, error)
 	UpdateFolder(folderId int64, params model.UpdateFolderParams) (bool, error)

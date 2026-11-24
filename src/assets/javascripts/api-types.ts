@@ -6,7 +6,12 @@ export interface MediaLink {
   description?: string;
 }
 
-export interface Feed {
+export interface ArticleRule {
+  content_selector: string;
+  exclude_selector: string;
+}
+
+export interface Feed extends ArticleRule {
   id: number;
   folder_id: number | null;
   title: string;
@@ -91,7 +96,7 @@ export interface FeedCreateData {
   folder_id?: number | null;
 }
 
-export interface FeedUpdateData {
+export interface FeedUpdateData extends Partial<ArticleRule> {
   title?: string;
   folder_id?: number | null;
   feed_link?: string;

@@ -34,3 +34,13 @@ The top bar of the **article content** contains actions for the selected article
 - left chevron - navigate to the previous article in the list
 - right chevron - navigate to the next article in the list
 - close - close and unselect the current article
+
+## Scheduled article extraction
+
+1. Select a feed, open the **⋯** menu above its article list, and choose **Extract article text**.
+2. Enter a CSS selector for the text you want. For example, use `.entry-content` for a page whose article is inside `<div class="entry-content">`. To skip ads and related stories inside the article, enter `.ad, .related` under **Exclude selector**. Use selectors that match the site's original HTML.
+3. Save, then choose **Refresh Feeds** in the feed list menu to try the rule. For recurring updates, set **Auto Refresh** in that menu to an interval such as `30m` and keep Yarr Sift running.
+
+New entries and previously saved entries are processed in batches. Yarr Sift connects directly to public HTTP(S) pages and keeps the text and line breaks from the matching elements in the server's HTML. Pages that require a login or load text with JavaScript may yield no text. When a fetch fails or no text matches, the RSS content stays available and the reader retries on a later refresh.
+
+Each successful match is saved once per rule. Changing a rule queues the feed's entries for extraction again. Clear the content selector and save to turn extraction off and restore the original feed content.

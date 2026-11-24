@@ -14,16 +14,18 @@ import (
 const NUM_WORKERS = 4
 
 type Worker struct {
-	db      storage.Storage
-	client  *http.Client
-	pending atomic.Int32
-	refresh *time.Ticker
-	reflock sync.Mutex
-	stopper chan bool
+	db       storage.Storage
+	client   *http.Client
+	articles *http.Client
+	itemMu   sync.Mutex // serialize refresh writes, including SQLite shared-cache transactions
+	pending  atomic.Int32
+	refresh  *time.Ticker
+	reflock  sync.Mutex
+	stopper  chan bool
 }
 
 func NewWorker(db storage.Storage, client *http.Client) *Worker {
-	return &Worker{db: db, client: client}
+	return &Worker{db: db, client: client, articles: newArticleClient(client.Timeout)}
 }
 
 func (w *Worker) FeedsPending() int32 {
@@ -102,44 +104,42 @@ func (w *Worker) RefreshFeeds() {
 }
 
 func (w *Worker) refresher(feeds []model.Feed) {
-	// w.db.ResetFeedErrors()
-
-	srcqueue := make(chan model.Feed, len(feeds))
-	dstqueue := make(chan []model.Item)
-
-	for range NUM_WORKERS {
-		go w.worker(srcqueue, dstqueue)
+	queue := make(chan model.Feed)
+	var workers sync.WaitGroup
+	for range min(NUM_WORKERS, len(feeds)) {
+		workers.Go(func() {
+			for feed := range queue {
+				w.refreshFeed(feed)
+				w.pending.Add(-1)
+			}
+		})
 	}
-
 	for _, feed := range feeds {
-		srcqueue <- feed
+		queue <- feed
 	}
-	for range feeds {
-		items := <-dstqueue
-		if len(items) > 0 {
-			w.db.CreateItems(items)
-		}
-		w.pending.Add(-1)
-	}
-	close(srcqueue)
-	close(dstqueue)
-
+	close(queue)
+	workers.Wait()
 	log.Printf("Finished refreshing %d feeds", len(feeds))
 }
 
-func (w *Worker) worker(srcqueue <-chan model.Feed, dstqueue chan<- []model.Item) {
-	for feed := range srcqueue {
-		empty := ""
-		w.db.UpdateFeedState(feed.Id, model.UpdateFeedStateParams{LastError: &empty})
+func (w *Worker) refreshFeed(feed model.Feed) {
+	empty := ""
+	w.db.UpdateFeedState(feed.Id, model.UpdateFeedStateParams{LastError: &empty})
 
-		items, err := listItems(w.client, feed)
-		if err != nil {
-			errMsg := err.Error()
-			w.db.UpdateFeedState(feed.Id, model.UpdateFeedStateParams{LastError: &errMsg})
-		}
-		if len(items) > 0 && feed.Icon == nil {
-			w.FindFeedFavicon(feed)
-		}
-		dstqueue <- items
+	items, err := listItems(w.client, feed)
+	if err != nil {
+		errMsg := err.Error()
+		w.db.UpdateFeedState(feed.Id, model.UpdateFeedStateParams{LastError: &errMsg})
+	}
+	if len(items) > 0 && feed.Icon == nil {
+		w.FindFeedFavicon(feed)
+	}
+	pending, err := w.saveItemsAndListPending(feed, items)
+	if err != nil {
+		log.Printf("Feed %d: %v", feed.Id, err)
+		return
+	}
+	if len(pending) > 0 {
+		w.extractArticles(feed, pending)
 	}
 }
