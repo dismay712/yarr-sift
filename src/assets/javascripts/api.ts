@@ -20,8 +20,8 @@ import type {
 export class HTTPError extends Error {
   status: number;
   statusText: string;
-  constructor(res: Response) {
-    super(res.statusText);
+  constructor(res: Response, detail = res.statusText) {
+    super(detail);
     this.status = res.status;
     this.statusText = res.statusText;
   }
@@ -65,8 +65,13 @@ function api(method: string, endpoint: string, opts: ApiOptions = {}) {
       if (err instanceof TypeError) throw new NetworkError(err.message);
       throw err;
     })
-    .then(res => {
-      if (!res.ok) throw new HTTPError(res);
+    .then(async res => {
+      if (!res.ok) {
+        const isValidationError =
+          res.status === 400 && res.headers.get("content-type")?.startsWith("text/plain");
+        const detail = isValidationError ? (await res.text()).trim() : "";
+        throw new HTTPError(res, detail || res.statusText);
+      }
       return res;
     });
 }

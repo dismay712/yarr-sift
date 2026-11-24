@@ -10,13 +10,16 @@ import (
 )
 
 type Feed struct {
-	Id          int64  `json:"id"`
-	FolderId    *int64 `json:"folder_id"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Link        string `json:"link"`
-	FeedLink    string `json:"feed_link"`
-	Icon        *Icon  `json:"icon,omitempty"`
+	Id                 int64  `json:"id"`
+	FolderId           *int64 `json:"folder_id"`
+	Title              string `json:"title"`
+	Description        string `json:"description"`
+	Link               string `json:"link"`
+	FeedLink           string `json:"feed_link"`
+	Icon               *Icon  `json:"icon,omitempty"`
+	ContentSelector    string `json:"content_selector"`
+	ExcludeSelector    string `json:"exclude_selector"`
+	ExtractionRevision int64  `json:"-"`
 }
 
 // Icon holds a feed favicon's raw bytes and serializes to a self-describing
@@ -59,11 +62,13 @@ func (i Icon) Value() (driver.Value, error) {
 }
 
 type CreateFeedParams struct {
-	Title       string
-	Description string
-	Link        string
-	FeedLink    string
-	FolderID    *int64
+	Title           string
+	Description     string
+	Link            string
+	FeedLink        string
+	FolderID        *int64
+	ContentSelector string
+	ExcludeSelector string
 }
 
 type Item struct {
@@ -231,10 +236,12 @@ type UpdateFeedStateParams struct {
 }
 
 type UpdateFeedParams struct {
-	Title    *string
-	FeedLink *string
-	FolderID Nullable[int64]
-	Icon     Nullable[Icon]
+	Title           *string
+	FeedLink        *string
+	FolderID        Nullable[int64]
+	Icon            Nullable[Icon]
+	ContentSelector *string
+	ExcludeSelector *string
 }
 
 type Nullable[T any] struct {

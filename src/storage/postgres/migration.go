@@ -8,6 +8,7 @@ import (
 
 var migrations = []func(*sql.Tx) error{
 	m01_initial,
+	m02_article_extraction,
 }
 
 var maxVersion = int64(len(migrations))
@@ -115,6 +116,32 @@ func m01_initial(tx *sql.Tx) error {
 			http_lmod      text not null default '',
 			http_etag      text not null default ''
 		);
+	`)
+	return err
+}
+
+func m02_article_extraction(tx *sql.Tx) error {
+	_, err := tx.Exec(`
+		alter table feeds add column content_selector text not null default '';
+		alter table feeds add column exclude_selector text not null default '';
+		alter table feeds add column extraction_revision bigint not null default 1;
+		alter table items add column rss_content text;
+		alter table items add column extraction_revision bigint not null default 0;
+		alter table items add column extraction_attempt bigint not null default 0;
+		create index idx_item_extraction_queue on items(feed_id, extraction_revision)
+			where link != '';
+
+		alter table items add column rss_search tsvector;
+		create function restore_rss_content() returns trigger language plpgsql as $$
+		begin
+			update items set content = rss_content, rss_content = null, search = rss_search, rss_search = null
+			where feed_id = new.id and rss_content is not null;
+			return null;
+		end;
+		$$;
+		create trigger restore_rss_content after update of content_selector, exclude_selector on feeds
+			for each row when (old.extraction_revision != new.extraction_revision)
+			execute function restore_rss_content();
 	`)
 	return err
 }

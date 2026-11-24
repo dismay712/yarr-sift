@@ -59,6 +59,56 @@
     "zh": "所选订阅/文件夹设置",
     "ru": "Настройки выбранной ленты/папки"
   },
+  "article_extraction": {
+    "en": "Extract article text",
+    "de": "Artikeltext extrahieren",
+    "fr": "Extraire le texte des articles",
+    "es": "Extraer el texto de los artículos",
+    "ja": "記事本文の抽出",
+    "pt": "Extrair texto dos artigos",
+    "zh": "提取原文",
+    "ru": "Извлечение текста статей"
+  },
+  "article_rule_help": {
+    "en": "When the feed refreshes, keep text from the parts of each linked page that match your CSS selector. Set the auto-refresh interval in Feed Settings. Clear the content selector to turn extraction off.",
+    "de": "Beim Aktualisieren des Feeds wird der Text der Seitenbereiche übernommen, die dem CSS-Selektor entsprechen. Das Aktualisierungsintervall lässt sich in den Feed-Einstellungen festlegen. Leere den Inhaltsselektor, um die Extraktion auszuschalten.",
+    "fr": "À chaque actualisation du flux, le texte des éléments de la page qui correspondent au sélecteur CSS est extrait. Réglez la fréquence d’actualisation dans les paramètres des flux. Effacez le sélecteur de contenu pour désactiver l’extraction.",
+    "es": "Al actualizar la fuente, se extrae el texto de los elementos de cada página que coinciden con el selector CSS. Ajusta el intervalo de actualización en la configuración de fuentes. Borra el selector de contenido para desactivar la extracción.",
+    "ja": "フィード更新時に、リンク先のページで CSS セレクターに一致する部分のテキストを取得します。自動更新の間隔はフィード設定で指定できます。本文セレクターを空にすると抽出を停止します。",
+    "pt": "A cada atualização do feed, é extraído o texto dos elementos de cada página que correspondem ao seletor CSS. Defina o intervalo de atualização nas configurações de feeds. Apague o seletor de conteúdo para desativar a extração.",
+    "zh": "刷新订阅时，从条目链接指向的网页中提取 CSS 选择器匹配的文本。要定时提取，请在「订阅设置」中设置自动刷新间隔。清空正文选择器即可停用。",
+    "ru": "При обновлении ленты извлекается текст тех частей исходной страницы, которые соответствуют CSS-селектору. Интервал автообновления задаётся в настройках лент. Очистите селектор содержимого, чтобы отключить извлечение."
+  },
+  "content_selector": {
+    "en": "Content selector",
+    "de": "Inhaltsselektor",
+    "fr": "Sélecteur de contenu",
+    "es": "Selector de contenido",
+    "ja": "本文セレクター",
+    "pt": "Seletor de conteúdo",
+    "zh": "正文选择器",
+    "ru": "Селектор содержимого"
+  },
+  "exclude_selector": {
+    "en": "Exclude selector (optional)",
+    "de": "Ausschlussselektor (optional)",
+    "fr": "Sélecteur d’exclusion (facultatif)",
+    "es": "Selector de exclusión (opcional)",
+    "ja": "除外セレクター（任意）",
+    "pt": "Seletor de exclusão (opcional)",
+    "zh": "排除选择器（可选）",
+    "ru": "Селектор исключений (необязательно)"
+  },
+  "save": {
+    "en": "Save",
+    "de": "Speichern",
+    "fr": "Enregistrer",
+    "es": "Guardar",
+    "ja": "保存",
+    "pt": "Salvar",
+    "zh": "保存",
+    "ru": "Сохранить"
+  },
   "new_feed": {
     "en": "New Feed",
     "de": "Neuer Feed",

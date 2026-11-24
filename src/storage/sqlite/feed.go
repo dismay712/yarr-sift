@@ -13,31 +13,28 @@ func (s *SQLiteStorage) CreateFeed(params model.CreateFeedParams) *model.Feed {
 		title = params.FeedLink
 	}
 	row := s.db.QueryRow(`
-		insert into feeds (title, description, link, feed_link, folder_id)
-		values (:title, :description, :link, :feed_link, :folder_id)
+		insert into feeds (title, description, link, feed_link, folder_id, content_selector, exclude_selector)
+		values (:title, :description, :link, :feed_link, :folder_id, :content_selector, :exclude_selector)
 		on conflict (feed_link) do update set folder_id = :folder_id
-        returning id`,
+		returning id, folder_id, title, coalesce(description, ''), coalesce(link, ''), feed_link, icon,
+			content_selector, exclude_selector, extraction_revision`,
 		sql.Named("title", title),
 		sql.Named("description", params.Description),
 		sql.Named("link", params.Link),
 		sql.Named("feed_link", params.FeedLink),
 		sql.Named("folder_id", params.FolderID),
+		sql.Named("content_selector", params.ContentSelector),
+		sql.Named("exclude_selector", params.ExcludeSelector),
 	)
 
-	var id int64
-	err := row.Scan(&id)
+	var f model.Feed
+	err := row.Scan(&f.Id, &f.FolderId, &f.Title, &f.Description, &f.Link, &f.FeedLink,
+		&f.Icon, &f.ContentSelector, &f.ExcludeSelector, &f.ExtractionRevision)
 	if err != nil {
 		log.Print(err)
 		return nil
 	}
-	return &model.Feed{
-		Id:          id,
-		Title:       title,
-		Description: params.Description,
-		Link:        params.Link,
-		FeedLink:    params.FeedLink,
-		FolderId:    params.FolderID,
-	}
+	return &f
 }
 
 func (s *SQLiteStorage) DeleteFeed(feedId int64) bool {
@@ -59,6 +56,12 @@ func (s *SQLiteStorage) DeleteFeed(feedId int64) bool {
 func (s *SQLiteStorage) UpdateFeed(feedId int64, params model.UpdateFeedParams) (bool, error) {
 	_, err := s.db.Exec(`
 		update feeds set
+			extraction_revision = case
+				when coalesce(:content_selector, content_selector) != content_selector
+				  or coalesce(:exclude_selector, exclude_selector) != exclude_selector
+				then extraction_revision + 1 else extraction_revision end,
+			content_selector = coalesce(:content_selector, content_selector),
+			exclude_selector = coalesce(:exclude_selector, exclude_selector),
 			title     = coalesce(:title, title),
 			feed_link = coalesce(:feed_link, feed_link),
 			folder_id = case when :update_folder_id then :folder_id else folder_id end,
@@ -72,6 +75,8 @@ func (s *SQLiteStorage) UpdateFeed(feedId int64, params model.UpdateFeedParams) 
 		sql.Named("folder_id", params.FolderID.Value),
 		sql.Named("update_icon", params.Icon.Set),
 		sql.Named("icon", params.Icon.Value),
+		sql.Named("content_selector", params.ContentSelector),
+		sql.Named("exclude_selector", params.ExcludeSelector),
 	)
 	if err != nil {
 		log.Print(err)
@@ -83,7 +88,8 @@ func (s *SQLiteStorage) UpdateFeed(feedId int64, params model.UpdateFeedParams) 
 func (s *SQLiteStorage) ListFeeds() []model.Feed {
 	result := make([]model.Feed, 0)
 	rows, err := s.db.Query(`
-		select id, folder_id, title, description, link, feed_link, icon
+		select id, folder_id, title, coalesce(description, ''), coalesce(link, ''), feed_link, icon,
+			content_selector, exclude_selector, extraction_revision
 		from feeds
 		order by title collate nocase
 	`)
@@ -91,6 +97,8 @@ func (s *SQLiteStorage) ListFeeds() []model.Feed {
 		log.Print(err)
 		return result
 	}
+	defer rows.Close()
+
 	for rows.Next() {
 		var f model.Feed
 		err = rows.Scan(
@@ -101,6 +109,9 @@ func (s *SQLiteStorage) ListFeeds() []model.Feed {
 			&f.Link,
 			&f.FeedLink,
 			&f.Icon,
+			&f.ContentSelector,
+			&f.ExcludeSelector,
+			&f.ExtractionRevision,
 		)
 		if err != nil {
 			log.Print(err)
@@ -115,12 +126,12 @@ func (s *SQLiteStorage) GetFeed(id int64) *model.Feed {
 	var f model.Feed
 	err := s.db.QueryRow(`
 		select
-			id, folder_id, title, link, feed_link,
-			icon
+			id, folder_id, title, coalesce(description, ''), coalesce(link, ''), feed_link,
+			icon, content_selector, exclude_selector, extraction_revision
 		from feeds where id = :id
 	`, sql.Named("id", id)).Scan(
-		&f.Id, &f.FolderId, &f.Title, &f.Link, &f.FeedLink,
-		&f.Icon,
+		&f.Id, &f.FolderId, &f.Title, &f.Description, &f.Link, &f.FeedLink,
+		&f.Icon, &f.ContentSelector, &f.ExcludeSelector, &f.ExtractionRevision,
 	)
 	if err != nil {
 		if err != sql.ErrNoRows {

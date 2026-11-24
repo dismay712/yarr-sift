@@ -15,6 +15,7 @@ import (
 	"github.com/nkanaev/yarr/src/content/htmlutil"
 	"github.com/nkanaev/yarr/src/content/readability"
 	"github.com/nkanaev/yarr/src/content/sanitizer"
+	"github.com/nkanaev/yarr/src/content/sift"
 	"github.com/nkanaev/yarr/src/content/silo"
 	"github.com/nkanaev/yarr/src/parser/opml"
 	"github.com/nkanaev/yarr/src/server/middleware"
@@ -286,7 +287,14 @@ func (s *Server) handleFeed(w http.ResponseWriter, r *http.Request) {
 				params.FeedLink = &l
 			}
 		}
-		s.db(r).UpdateFeed(id, params)
+		if err := setExtractionRule(&params, feed, body); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if _, err := s.db(r).UpdateFeed(id, params); err != nil {
+			http.Error(w, "Could not save feed settings.", http.StatusInternalServerError)
+			return
+		}
 		w.WriteHeader(http.StatusOK)
 	case http.MethodDelete:
 		s.db(r).DeleteFeed(id)
@@ -294,6 +302,40 @@ func (s *Server) handleFeed(w http.ResponseWriter, r *http.Request) {
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
+}
+
+func setExtractionRule(params *model.UpdateFeedParams, feed *model.Feed, body map[string]any) error {
+	content, hasContent := body["content_selector"]
+	exclude, hasExclude := body["exclude_selector"]
+	if !hasContent && !hasExclude {
+		return nil
+	}
+	contentSelector, excludeSelector := feed.ContentSelector, feed.ExcludeSelector
+	if hasContent {
+		value, ok := content.(string)
+		if !ok {
+			return fmt.Errorf("content_selector must be a string")
+		}
+		contentSelector = strings.TrimSpace(value)
+		params.ContentSelector = &contentSelector
+	}
+	if hasExclude {
+		value, ok := exclude.(string)
+		if !ok {
+			return fmt.Errorf("exclude_selector must be a string")
+		}
+		excludeSelector = strings.TrimSpace(value)
+		params.ExcludeSelector = &excludeSelector
+	}
+	if contentSelector == "" {
+		if hasExclude && excludeSelector != "" {
+			return fmt.Errorf("an exclusion needs a content selector")
+		}
+		params.ExcludeSelector = new("")
+		return nil
+	}
+	_, err := sift.Compile(contentSelector, excludeSelector)
+	return err
 }
 
 func (s *Server) handleItem(w http.ResponseWriter, r *http.Request) {

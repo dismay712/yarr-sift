@@ -91,6 +91,55 @@ func (s *PostgresStorage) CreateItems(items []model.Item) bool {
 	return true
 }
 
+// ListPendingExtractions prioritizes untouched items, then the oldest failed attempts.
+func (s *PostgresStorage) ListPendingExtractions(feed model.Feed, limit int) ([]model.Item, error) {
+	if limit <= 0 || feed.ContentSelector == "" {
+		return nil, nil
+	}
+	rows, err := s.db.Query(`
+		select i.id, i.link from items i
+		join feeds f on f.id = i.feed_id
+		where f.id = $1 and f.extraction_revision = $2 and f.content_selector != ''
+		  and i.extraction_revision < f.extraction_revision and i.link != ''
+		order by i.extraction_attempt, i.id desc
+		limit $3`, feed.Id, feed.ExtractionRevision, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []model.Item
+	for rows.Next() {
+		var item model.Item
+		if err := rows.Scan(&item.Id, &item.Link); err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
+}
+
+// A nil content records a failed attempt without replacing the last readable body.
+// Ignore work that finished after a rule change or another successful extraction.
+func (s *PostgresStorage) RecordExtraction(feed model.Feed, itemID int64, content *string) error {
+	const pending = `
+		where id = $2 and feed_id = $3 and extraction_revision < $4
+		  and exists (select 1 from feeds where id = $3 and extraction_revision = $4
+		              and content_selector != '' for share)`
+	now := time.Now().UnixNano()
+	if content == nil {
+		_, err := s.db.Exec("update items set extraction_attempt = $1"+pending,
+			now, itemID, feed.Id, feed.ExtractionRevision)
+		return err
+	}
+	_, err := s.db.Exec(`
+		update items set extraction_attempt = $1, rss_content = coalesce(content, ''), rss_search = search,
+			content = $5, extraction_revision = $4,
+			search = to_tsvector('simple', coalesce(title, '') || ' ' || $6)`+pending,
+		now, itemID, feed.Id, feed.ExtractionRevision, *content, htmlutil.ExtractText(*content))
+	return err
+}
+
 func listQueryPredicate(filter model.ItemFilter, newestFirst bool) (string, []any) {
 	cond := make([]string, 0)
 	args := make([]any, 0)
